@@ -1,18 +1,48 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 describe('App', () => {
-    it('renders ShopSmart title', () => {
-        // Mock fetch
-        global.fetch = vi.fn(() =>
-            Promise.resolve({
-                json: () => Promise.resolve({ status: 'ok', message: 'Test Msg', timestamp: 'now' })
-            })
-        );
+    beforeEach(() => {
+        // Clear mocks before each test
+        vi.clearAllMocks();
+    });
+
+    it('renders loading state initially', () => {
+        // Mock fetch that doesn't resolve immediately
+        global.fetch = vi.fn(() => new Promise(() => {}));
+        
+        render(<App />);
+        expect(screen.getByText(/Loading backend status.../i)).toBeInTheDocument();
+    });
+
+    it('renders backend data on successful fetch', async () => {
+        const mockData = { status: 'ok', message: 'Test Msg', timestamp: 'now' };
+        
+        global.fetch = vi.fn().mockResolvedValue({
+            json: () => Promise.resolve(mockData)
+        });
 
         render(<App />);
-        const linkElement = screen.getByText(/ShopSmart/i);
-        expect(linkElement).toBeInTheDocument();
+
+        // Wait for the data to be displayed
+        await waitFor(() => {
+            expect(screen.getByText(/Status:/i)).toBeInTheDocument();
+            expect(screen.getByText('ok')).toHaveClass('status-ok');
+            expect(screen.getByText(/Test Msg/i)).toBeInTheDocument();
+        });
+    });
+
+    it('handles fetch errors gracefully (logs to console)', async () => {
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+        render(<App />);
+
+        await waitFor(() => {
+            expect(consoleSpy).toHaveBeenCalledWith('Error fetching health check:', expect.any(Error));
+        });
+
+        consoleSpy.mockRestore();
     });
 });
