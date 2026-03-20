@@ -13,20 +13,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/github_actions
-          chmod 600 ~/.ssh/github_actions
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
       - name: Deploy to EC2
-        run: |
-          ssh -i ~/.ssh/github_actions ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
             mkdir -p ~/shopsmart
             cd ~/shopsmart
 
-            # If it's a git repo, pull, else clone (assuming user setup some things, let's keep it robust)
+            # If it's a git repo, pull, else clone
             if [ -d ".git" ]; then
               git pull origin main
             else
@@ -48,4 +45,3 @@ jobs:
             sudo mkdir -p /var/www/shopsmart/client
             sudo cp -r dist/* /var/www/shopsmart/client/
             sudo systemctl restart nginx || echo "Nginx not installed or running, skipping..."
-          EOF
