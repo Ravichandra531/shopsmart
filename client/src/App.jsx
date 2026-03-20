@@ -26,9 +26,6 @@ function App() {
                     <p>Loading backend status...</p>
                 )}
             </div>
-            <p className="hint">
-                Edit <code>src/App.jsx</code> and save to test HMR
-            </p>
         </div>
     )
 }

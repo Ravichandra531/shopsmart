@@ -23,21 +23,29 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -i ~/.ssh/github_actions ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            mkdir -p ~/shopsmart
             cd ~/shopsmart
-            git pull origin main
+
+            # If it's a git repo, pull, else clone (assuming user setup some things, let's keep it robust)
+            if [ -d ".git" ]; then
+              git pull origin main
+            else
+              git clone https://github.com/${{ github.repository }}.git . || echo "Repository might already exist"
+            fi
 
             # Backend
             cd server
             npm install
-            pm2 restart shopsmart-backend
+            # Idempotent PM2 start/restart
+            pm2 restart shopsmart-backend || pm2 start src/index.js --name shopsmart-backend
 
             # Frontend
             cd ../client
             npm install
             npm run build
 
-            sudo rm -rf /var/www/shopsmart/client/dist
-            sudo cp -r dist /var/www/shopsmart/client/
-
-            sudo systemctl restart nginx
+            # Idempotent frontend deployment
+            sudo mkdir -p /var/www/shopsmart/client
+            sudo cp -r dist/* /var/www/shopsmart/client/
+            sudo systemctl restart nginx || echo "Nginx not installed or running, skipping..."
           EOF

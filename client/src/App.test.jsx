@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('App', () => {
     beforeEach(() => {
@@ -10,7 +10,7 @@ describe('App', () => {
 
     it('renders loading state initially', () => {
         // Mock fetch that doesn't resolve immediately
-        global.fetch = vi.fn(() => new Promise(() => {}));
+        globalThis.fetch = vi.fn(() => new Promise(() => {}));
         
         render(<App />);
         expect(screen.getByText(/Loading backend status.../i)).toBeInTheDocument();
@@ -19,7 +19,7 @@ describe('App', () => {
     it('renders backend data on successful fetch', async () => {
         const mockData = { status: 'ok', message: 'Test Msg', timestamp: 'now' };
         
-        global.fetch = vi.fn().mockResolvedValue({
+        globalThis.fetch = vi.fn().mockResolvedValue({
             json: () => Promise.resolve(mockData)
         });
 
@@ -35,7 +35,7 @@ describe('App', () => {
 
     it('handles fetch errors gracefully (logs to console)', async () => {
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+        globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
         render(<App />);
 
