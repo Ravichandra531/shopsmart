@@ -65,7 +65,7 @@ jobs:
     steps:
       # ── Step 1: Checkout code ──────────────────────────────
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # ── Step 2: Configure AWS credentials (Academy = 3 keys) ──
       - name: Configure AWS Credentials
